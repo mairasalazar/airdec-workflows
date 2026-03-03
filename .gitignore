@@ -71,3 +71,6 @@ dmypy.txt
 
 # ruff
 .ruff_cache/
+
+# Keys
+*.pem

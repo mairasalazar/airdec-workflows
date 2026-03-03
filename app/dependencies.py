@@ -1,18 +1,33 @@
+"""FastAPI dependencies for authentication."""
+
+import os
 from typing import Annotated
 
-from fastapi import Header, HTTPException
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
+
+from .auth import decode_access_token
+
+AUTH_DISABLED = os.getenv("AUTH_DISABLED", "false").lower() == "true"
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=not AUTH_DISABLED)
 
 
-async def get_token_header(x_token: Annotated[str, Header()]):
-    """Validate the X-Token header.
+async def get_current_user(
+    token: Annotated[str | None, Depends(oauth2_scheme)] = None,
+) -> dict:
+    """Extract and verify the JWT from the Authorization header.
 
-    This is a temporary token for development purposes.
+    When AUTH_DISABLED=true, authentication is skipped and a
+    dummy user payload is returned (for local development only).
+
+    Args:
+        token: The Bearer token extracted by OAuth2PasswordBearer.
+
+    Returns:
+        The decoded JWT payload containing user information.
     """
-    if x_token != "fake-super-secret-token":
-        raise HTTPException(status_code=400, detail="X-Token header invalid")
+    if AUTH_DISABLED:
+        return {"sub": "dev-user"}
 
-
-async def get_query_token(token: str):
-    """Validate the query token."""
-    if token != "jessica":
-        raise HTTPException(status_code=400, detail="No Jessica token provided")
+    return decode_access_token(token)
