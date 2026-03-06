@@ -1,6 +1,5 @@
 from io import BytesIO
 
-import httpx
 import pdfplumber
 from pydantic import BaseModel
 from temporalio import activity
@@ -22,10 +21,9 @@ class ExtractPdfContentResponse(BaseModel):
 @activity.defn
 async def create(request: ExtractPdfContentRequest) -> ExtractPdfContentResponse:
     """Download a PDF from a URL and extract its text content using pdfplumber."""
-    async with httpx.AsyncClient() as client:
-        response = await client.get(request.url)
-        response.raise_for_status()
-        pdf_bytes = response.content
+    path = request.url.removeprefix("file://")
+    with open(path, "rb") as f:
+        pdf_bytes = f.read()
 
     pages_text: list[str] = []
     num_pages = 0
