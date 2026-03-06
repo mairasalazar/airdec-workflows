@@ -1,4 +1,3 @@
-import httpx
 from pydantic import BaseModel
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
@@ -24,11 +23,10 @@ class ExtractPdfContentResponse(BaseModel):
 
 @activity.defn
 async def create(request: ExtractPdfContentRequest) -> ExtractPdfContentResponse:
-    """Download PDF from a URL and extract its content using the specified extractor."""
-    async with httpx.AsyncClient() as client:
-        response = await client.get(request.url)
-        response.raise_for_status()
-        pdf_bytes = response.content
+    """Read a file from a URI and extract its text content using the specified extractor."""
+    path = request.url.removeprefix("file://")
+    with open(path, "rb") as f:
+        pdf_bytes = f.read()
 
     # Extract content using the extraction module
     try:
