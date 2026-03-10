@@ -109,7 +109,6 @@ private_key = open("private_key.pem").read()
 token = jwt.encode(
     {
         "iss": "tenant-a",                                    # Required: must match tenants.json key
-        "sub": "user123",
         "workflow_id": "YOUR_WORKFLOW_ID",                    # Optional: scope to a specific workflow
         "exp": datetime.now(timezone.utc) + timedelta(hours=1)
     },

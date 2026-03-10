@@ -14,7 +14,6 @@ class AuthContext:
     """Authenticated request context."""
 
     tenant_id: str
-    sub: str
     workflow_id: str | None = None
 
 
@@ -30,7 +29,7 @@ def decode_access_token(token: str, tenant_registry: TenantRegistry) -> AuthCont
         tenant_registry: Registry to look up tenant public keys.
 
     Returns:
-        An AuthContext with tenant_id, sub, and optional workflow_id.
+        An AuthContext with tenant_id and optional workflow_id.
 
     Raises:
         HTTPException: If the token is expired, invalid, the issuer
@@ -117,6 +116,5 @@ def decode_access_token(token: str, tenant_registry: TenantRegistry) -> AuthCont
 
     return AuthContext(
         tenant_id=tenant_id,
-        sub=payload.get("sub", ""),
         workflow_id=payload.get("workflow_id"),
     )

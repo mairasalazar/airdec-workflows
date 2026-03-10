@@ -90,7 +90,6 @@ async def create_workflow(
     workflow = Workflow(
         status=WorkflowStatus.PROCESSING,
         url=body.url,
-        user_id=auth.sub,
         tenant_id=auth.tenant_id,
     )
     try:

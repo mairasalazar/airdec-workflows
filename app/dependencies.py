@@ -42,9 +42,9 @@ async def get_current_user(
         tenant_registry: The loaded tenant registry.
 
     Returns:
-        An AuthContext with tenant_id, sub, and optional workflow_id.
+        An AuthContext with tenant_id and optional workflow_id.
     """
     if settings.auth_disabled:
-        return AuthContext(tenant_id="dev-tenant", sub="dev-user")
+        return AuthContext(tenant_id="dev-tenant")
 
     return decode_access_token(token, tenant_registry)

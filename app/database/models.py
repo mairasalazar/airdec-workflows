@@ -26,7 +26,6 @@ class Workflow(SQLModel, table=True):
     public_id: str = Field(default_factory=nanoid)
     url: str
     status: WorkflowStatus
-    user_id: str
     tenant_id: str
 
     def to_dict(self):
@@ -35,6 +34,5 @@ class Workflow(SQLModel, table=True):
             "public_id": self.public_id,
             "status": self.status,
             "url": self.url,
-            "user_id": self.user_id,
             "tenant_id": self.tenant_id,
         }
