@@ -41,7 +41,7 @@ if _settings.allowed_origins:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=_settings.allowed_origins,
-        allow_methods=["*"],
+        allow_methods=["GET"],
         allow_headers=["*"],
     )
 
