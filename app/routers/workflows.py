@@ -3,10 +3,10 @@
 import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
+from sse_starlette import EventSourceResponse, ServerSentEvent
 from temporalio.client import Client
 
 from app.auth import AuthContext, decode_access_token
@@ -154,14 +154,28 @@ async def workflow_event(request: Request, workflow_id: str):
                 workflow = session.exec(
                     select(Workflow).where(Workflow.public_id == workflow_id)
                 ).one()
-                if workflow.status.name == "ERROR" or workflow.status.name == "SUCCESS":
-                    yield workflow.status.name
-                    break
 
-                yield workflow.status.name
+                status = workflow.status.name
+                yield ServerSentEvent(data=status)
+
+                if status in {"ERROR", "SUCCESS"}:
+                    yield ServerSentEvent(data="{}", event="done")
+                    return
+
             except SQLAlchemyError as e:
+                print("Error in fetching from database (stream_workflow)", e)
+                yield ServerSentEvent(
+                    data="Failed to read workflow status.",
+                    event="error",
+                )
+                break
+
+            except Exception as e:
                 print("Error(stream_workflow)", e)
-                raise HTTPException(status_code=500)
+                yield ServerSentEvent(
+                    data="An unexpected error occurred while streaming workflow results.",  # noqa: E501
+                    event="error",
+                )
 
         await asyncio.sleep(STREAM_DELAY)
 
@@ -202,6 +216,6 @@ async def stream_workflow(
 
     verify_tenant_owns_workflow(auth, workflow)
 
-    return StreamingResponse(
+    return EventSourceResponse(
         workflow_event(request, workflow_id), media_type="text/event-stream"
     )
