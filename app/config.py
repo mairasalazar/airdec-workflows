@@ -1,8 +1,18 @@
 """Centralized application settings using Pydantic Settings."""
 
+from enum import Enum
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings
+
+
+class Environment(str, Enum):
+    """Application environment."""
+
+    LOCAL = "local"
+    DEV = "dev"
+    QA = "qa"
+    PROD = "prod"
 
 
 class Settings(BaseSettings):
@@ -34,6 +44,9 @@ class Settings(BaseSettings):
     litellm_api_key: str | None = None
     ollama_base_url: str = "http://localhost:11434/v1"
     ollama_api_key: str | None = None
+
+    # Environment
+    orcha_env: Environment = Environment.LOCAL
 
     @property
     def database_url(self) -> str:
