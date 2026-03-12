@@ -1,8 +1,18 @@
 """Centralized application settings using Pydantic Settings."""
 
+from enum import Enum
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings
+
+
+class Environment(str, Enum):
+    """Application environment."""
+
+    LOCAL = "local"
+    DEV = "dev"
+    QA = "qa"
+    PROD = "prod"
 
 
 class Settings(BaseSettings):
@@ -25,6 +35,9 @@ class Settings(BaseSettings):
 
     # Security
     allowed_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+    # Environment
+    orcha_env: Environment = Environment.LOCAL
 
     @property
     def database_url(self) -> str:

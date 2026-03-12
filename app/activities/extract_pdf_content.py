@@ -1,8 +1,12 @@
+import httpx
 from pydantic import BaseModel
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
+from app.config import Environment, get_settings
 from app.extractors import get_extractor
+
+settings = get_settings()
 
 
 class ExtractPdfContentRequest(BaseModel):
@@ -23,10 +27,15 @@ class ExtractPdfContentResponse(BaseModel):
 
 @activity.defn
 async def create(request: ExtractPdfContentRequest) -> ExtractPdfContentResponse:
-    """Read a file from a URI and extract its text content using the specified extractor."""
-    path = request.url.removeprefix("file://")
-    with open(path, "rb") as f:
-        pdf_bytes = f.read()
+    """Read a file and extract its text content using the specified extractor."""
+    if settings.orcha_env in [Environment.LOCAL, Environment.DEV]:
+        with open(request.url, "rb") as f:
+            pdf_bytes = f.read()
+    else:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(request.url)
+            response.raise_for_status()
+            pdf_bytes = response.content
 
     # Extract content using the extraction module
     try:
