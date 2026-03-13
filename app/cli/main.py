@@ -2,6 +2,7 @@ import signal
 import subprocess
 import sys
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from sqlmodel import SQLModel
@@ -10,6 +11,7 @@ from app.database.models import Workflow  # noqa: F401
 from app.database.session import get_engine
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+CURRENT_PROJECT_NAME = "orcha-workflows"
 
 app = typer.Typer(help="Orcha CLI tools.")
 services_app = typer.Typer(
@@ -32,22 +34,26 @@ def init_db():
 
 
 @services_app.command()
-def start():
+def start(
+    project: Annotated[str, typer.Option("--project", "-p")] = CURRENT_PROJECT_NAME,
+):
     """Start infrastructure services."""
-    typer.echo("Starting services...")
+    typer.echo(f"Starting services for {project}...")
     result = subprocess.run(
-        ["docker", "compose", "up", "-d"],
+        ["docker", "compose", "-p", project, "up", "-d"],
         cwd=PROJECT_ROOT,
     )
     sys.exit(result.returncode)
 
 
 @services_app.command()
-def stop():
+def stop(
+    project: Annotated[str, typer.Option("--project", "-p")] = CURRENT_PROJECT_NAME,
+):
     """Stop infrastructure services."""
-    typer.echo("Stopping services...")
+    typer.echo(f"Stopping services for {project}...")
     result = subprocess.run(
-        ["docker", "compose", "down"],
+        ["docker", "compose", "-p", project, "down"],
         cwd=PROJECT_ROOT,
     )
     sys.exit(result.returncode)

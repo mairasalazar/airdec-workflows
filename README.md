@@ -8,7 +8,10 @@ Backend service for Orcha AI extraction, built with **FastAPI**, **Temporal**, a
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
 - Python ≥ 3.14
 
+<a id="local-setup"></a>
 ## Local Setup
+Note: if starting the Orcha services for the first time after the project name refactoring,
+please read the section on [post-refactoring setup](#post-refactoring-setup).
 
 ### 1. Install dependencies
 
@@ -38,6 +41,19 @@ uv run orcha run
 uv run orcha run server     # FastAPI dev server
 uv run orcha run workers    # Temporal worker
 ```
+
+<a id="post-refactoring-setup"></a>
+## Post-refactoring Setup
+
+Only in the first time you start the project after the project name refactoring,
+first stop the existing services under the project `airdec-workflows`:
+
+```bash
+uv run orcha services stop -p airdec-workflows
+```
+
+Now you can follow the steps in the [Local Setup](#local-setup) section.
+The infrastructure and new database will be running under the new project name.
 
 ## Authentication
 
