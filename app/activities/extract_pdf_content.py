@@ -31,9 +31,15 @@ async def extract_pdf_text(
     request: ExtractPdfContentRequest,
 ) -> ExtractPdfContentResponse:
     """Read a file and extract its text content using the specified extractor."""
-    if settings.orcha_env in [Environment.LOCAL, Environment.DEV]:
-        with open(request.url, "rb") as f:
-            pdf_bytes = f.read()
+    if settings.orcha_env in {Environment.LOCAL, Environment.DEV}:
+        try:
+            with open(request.url, "rb") as f:
+                pdf_bytes = f.read()
+        except FileNotFoundError as e:
+            raise ApplicationError(
+                str(e),
+                non_retryable=True,
+            ) from e
     else:
         async with httpx.AsyncClient() as client:
             response = await client.get(request.url)
