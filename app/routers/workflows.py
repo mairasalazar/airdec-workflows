@@ -6,6 +6,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm.exc import NoResultFound
 from sqlmodel import Session, select
 from sse_starlette import EventSourceResponse, ServerSentEvent
 from temporalio.client import Client
@@ -14,6 +15,7 @@ from app.auth import AuthContext, decode_access_token
 from app.database.models import Workflow, WorkflowStatus
 from app.database.session import get_db_session
 from app.dependencies import get_current_user
+from app.errors import WorkflowEventError
 from app.workflows.extract_metadata_workflow import (
     ExtractMetadata,
     ExtractMetadataWorkflowRequest,
@@ -159,47 +161,42 @@ async def workflow_event(request: Request, workflow_id: str):
         if await request.is_disconnected():
             break
 
-        with Session(request.app.state.db_engine) as session:
-            try:
-                workflow = session.exec(
-                    select(Workflow).where(Workflow.public_id == workflow_id)
-                ).one()
+        try:
+            with Session(request.app.state.db_engine) as session:
+                try:
+                    workflow = session.exec(
+                        select(Workflow).where(Workflow.public_id == workflow_id)
+                    ).one()
+                except NoResultFound:
+                    raise WorkflowEventError(error_code="WORKFLOW_NOT_FOUND")
+                except SQLAlchemyError as e:
+                    print("Error in fetching from database (stream_workflow)", e)
+                    raise WorkflowEventError(error_code="DB_FETCH_FAILED")
 
-                status = workflow.status
+            status = workflow.status
 
-                if status == WorkflowStatus.SUCCESS:
-                    yield ServerSentEvent(
-                        data=json.dumps(workflow.result), event="metadata"
-                    )
-                    yield ServerSentEvent(data="done", event="end")
-                    break
-
-                if status == WorkflowStatus.ERROR:
-                    yield ServerSentEvent(
-                        # TODO: improve it with a better error message for end users
-                        data="The Temporal Workflow failed",
-                        event="error",
-                    )
-                    yield ServerSentEvent(data="done", event="end")
-                    break
-
-            except SQLAlchemyError as e:
-                print("Error in fetching from database (stream_workflow)", e)
+            if status == WorkflowStatus.SUCCESS:
                 yield ServerSentEvent(
-                    data="Failed to read workflow status.",
+                    data=json.dumps(workflow.result), event="metadata"
+                )
+                yield ServerSentEvent(data="done", event="end")
+                break
+
+            if status == WorkflowStatus.ERROR:
+                yield ServerSentEvent(
+                    data=json.dumps({"error_code": "WORKFLOW_FAILED"}),
                     event="error",
                 )
                 yield ServerSentEvent(data="done", event="end")
                 break
 
-            except Exception as e:
-                print("Error(stream_workflow)", e)
-                yield ServerSentEvent(
-                    data="An unexpected error occurred while streaming workflow results.",  # noqa: E501
-                    event="error",
-                )
-                yield ServerSentEvent(data="done", event="end")
-                break
+        except WorkflowEventError as e:
+            yield ServerSentEvent(
+                data=json.dumps({"error_code": e.error_code}),
+                event="error",
+            )
+            yield ServerSentEvent(data="done", event="end")
+            break
 
         await asyncio.sleep(STREAM_DELAY)
 
