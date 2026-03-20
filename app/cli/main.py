@@ -72,7 +72,7 @@ def workers():
     """Start the Temporal worker."""
     typer.echo("Starting Temporal worker...")
     result = subprocess.run(
-        ["uv", "run", "python", "-m", "app.workers"],
+        [sys.executable, "-m", "app.workers"],
         cwd=PROJECT_ROOT,
     )
     sys.exit(result.returncode)
@@ -91,7 +91,7 @@ def run_all(ctx: typer.Context):
             cwd=PROJECT_ROOT,
         ),
         subprocess.Popen(
-            ["uv", "run", "python", "-m", "app.workers"],
+            [sys.executable, "-m", "app.workers"],
             cwd=PROJECT_ROOT,
         ),
     ]
