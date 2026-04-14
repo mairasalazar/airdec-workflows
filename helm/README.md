@@ -81,9 +81,16 @@ temporal.server.config.persistance to ensure they match your needs.
 
 **1. Prepare the external database**
 
-Your database instance must have **three databases** before deploying. If using PostgreSQL, you can connect to your
-instance and run:
+Your database instance must have **three databases** before deploying. If using PostgreSQL, connect to your
+instance with an admin user and run:
 
+```sql
+ALTER ROLE orcha CREATEDB;
+```
+
+> `<db-user>` is the database user set in `values.yaml`. Change it if the database user in your values is different.
+ 
+Then, login to the database as the `orcha` user and run:
 ```sql
 CREATE DATABASE orcha;
 CREATE DATABASE temporal;
